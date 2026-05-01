@@ -1,0 +1,13 @@
+{
+  "users": [
+    {
+      "id": "admin-1777665350515",
+      "name": "Administrator",
+      "email": "admin@example.com",
+      "password": "$2b$10$fwl1aX/qbph9B0dj3W3eOOug7smG2aJIC7bEI2pyz7EassoEjW3tC",
+      "age": null,
+      "role": "admin",
+      "createdAt": "2026-05-01T19:55:50.515Z"
+    }
+  ]
+}
