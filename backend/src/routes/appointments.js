@@ -1,74 +1,154 @@
 const express = require("express");
 const { v4: uuidv4 } = require("uuid");
-const { getAppointments, saveAppointments, getUsers } = require("../db");
+const { createSupabaseServiceClient } = require("../lib/supabase");
 const { APPOINTMENT_TYPES, APPOINTMENT_STATUSES } = require("../constants/appointments");
 const {
   validateAppointmentPayload,
-  hasScheduleConflict,
   isValidDateString,
 } = require("../utils/appointmentValidate");
 const { buildDaySchedule } = require("../utils/scheduleSlots");
 const { requireAdmin } = require("../middleware/roles");
 
 const router = express.Router();
+const supabase = createSupabaseServiceClient();
 
-function filterAppointmentsForUser(appointments, user, query) {
-  let list =
-    user.role === "admin"
-      ? [...appointments]
-      : appointments.filter((a) => a.userId === user.id);
+const appointmentSelect = `
+  *,
+  doctor:doctors(id,name,user_id),
+  patient:users(id,email)
+`;
 
-  if (query.date) {
-    list = list.filter((a) => a.date === query.date);
-  }
-  if (query.appointmentType) {
-    list = list.filter((a) => a.appointmentType === query.appointmentType);
-  }
-  if (query.status) {
-    list = list.filter((a) => a.status === query.status);
-  }
-  if (query.userId && user.role === "admin") {
-    list = list.filter((a) => a.userId === query.userId);
-  }
+function mapAppointmentRow(row) {
+  return {
+    id: row.id,
+    patientId: row.patient_id,
+    patientName: row.patient_name,
+    patientEmail: row.patient?.email || null,
+    appointmentType: row.appointment_type,
+    date: row.date,
+    time: row.time,
+    doctorId: row.doctor_id,
+    doctorName: row.doctor?.name || null,
+    notes: row.notes,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
 
-  return list.sort((a, b) => {
-    const aKey = `${a.date}T${a.time}`;
-    const bKey = `${b.date}T${b.time}`;
-    return aKey.localeCompare(bKey);
-  });
+async function fetchDoctor({ doctorId, doctorName }) {
+  if (doctorId) {
+    const { data, error } = await supabase
+      .from("doctors")
+      .select("id,name,specialty_id")
+      .eq("id", doctorId)
+      .single();
+    if (error) return null;
+    return data;
+  }
+  if (doctorName) {
+    const { data, error } = await supabase
+      .from("doctors")
+      .select("id,name,specialty_id")
+      .ilike("name", doctorName.trim())
+      .limit(1);
+    if (error || !data?.length) return null;
+    return data[0];
+  }
+  return null;
+}
+
+async function fetchDoctorForUser(userId) {
+  const { data, error } = await supabase
+    .from("doctors")
+    .select("id")
+    .eq("user_id", userId)
+    .single();
+  if (error) return null;
+  return data;
+}
+
+async function fetchAppointmentById(id) {
+  const { data, error } = await supabase
+    .from("appointments")
+    .select(appointmentSelect)
+    .eq("id", id)
+    .single();
+  if (error) return null;
+  return data;
 }
 
 function canAccessAppointment(user, appointment) {
-  return user.role === "admin" || appointment.userId === user.id;
+  if (user.role === "admin") return true;
+  if (appointment.patient_id === user.id) return true;
+  if (user.role === "doctor" && appointment.doctor?.user_id === user.id) return true;
+  return false;
 }
 
-function attachPatientEmail(appointments) {
-  const users = getUsers();
-  return appointments.map((appointment) => {
-    const owner = users.find((u) => u.id === appointment.userId);
-    return {
-      ...appointment,
-      patientEmail: owner?.email || null,
-    };
-  });
+async function hasScheduleConflict({ date, time, doctorId, excludeId }) {
+  let query = supabase
+    .from("appointments")
+    .select("id", { count: "exact", head: true })
+    .eq("date", date)
+    .eq("time", time)
+    .eq("doctor_id", doctorId)
+    .eq("status", "scheduled");
+
+  if (excludeId) {
+    query = query.neq("id", excludeId);
+  }
+
+  const { error, count } = await query;
+  if (error) {
+    throw error;
+  }
+  return count > 0;
+}
+
+async function buildAppointmentQuery(req) {
+  const builder = supabase.from("appointments").select(appointmentSelect).order("date", { ascending: true }).order("time", { ascending: true });
+
+  if (req.user.role === "admin") {
+    return builder;
+  }
+
+  if (req.user.role === "doctor") {
+    const doctor = await fetchDoctorForUser(req.user.id);
+    if (!doctor) {
+      return null;
+    }
+    return builder.eq("doctor_id", doctor.id);
+  }
+
+  return builder.eq("patient_id", req.user.id);
 }
 
 router.get("/meta/types", (req, res) => {
   res.json({ types: APPOINTMENT_TYPES, statuses: APPOINTMENT_STATUSES });
 });
 
-router.get("/schedule", (req, res) => {
-  const { date } = req.query;
-  if (!date || !isValidDateString(date)) {
-    return res.status(400).json({ message: "Informe date no formato YYYY-MM-DD" });
-  }
+router.get("/schedule", async (req, res, next) => {
+  try {
+    const { date } = req.query;
+    if (!date || !isValidDateString(date)) {
+      return res.status(400).json({ message: "Informe date no formato YYYY-MM-DD" });
+    }
 
-  const appointments = getAppointments();
-  let slots = buildDaySchedule(appointments, date);
+    const query = await buildAppointmentQuery(req);
+    if (!query) {
+      return res.status(403).json({ message: "Acesso negado" });
+    }
 
-  if (req.user.role !== "admin") {
-    slots = slots.map((slot) => {
-      if (slot.appointment && slot.appointment.userId !== req.user.id) {
+    const { data: appointments, error } = await query.eq("date", date);
+    if (error) {
+      throw error;
+    }
+
+    const slots = buildDaySchedule(appointments, date).map((slot) => {
+      if (!slot.appointment) return slot;
+      if (req.user.role === "admin") return slot;
+      if (req.user.role === "doctor") return slot;
+      if (slot.appointment.patient_id !== req.user.id) {
         return {
           time: slot.time,
           available: false,
@@ -80,46 +160,68 @@ router.get("/schedule", (req, res) => {
       }
       return slot;
     });
+
+    res.json({ date, slots });
+  } catch (err) {
+    next(err);
   }
-
-  res.json({ date, slots });
 });
 
-router.get("/stats", requireAdmin, (req, res) => {
-  const appointments = getAppointments();
-  const users = getUsers();
+router.get("/stats", requireAdmin, async (req, res, next) => {
+  try {
+    const [{ data: appointments }, { data: users }] = await Promise.all([
+      supabase.from("appointments").select("*").order("date", { ascending: true }),
+      supabase.from("users").select("*").order("created_at", { ascending: true }),
+    ]);
 
-  const byStatus = APPOINTMENT_STATUSES.reduce((acc, status) => {
-    acc[status] = appointments.filter((a) => a.status === status).length;
-    return acc;
-  }, {});
+    const byStatus = APPOINTMENT_STATUSES.reduce((acc, status) => {
+      acc[status] = appointments.filter((a) => a.status === status).length;
+      return acc;
+    }, {});
 
-  const byType = APPOINTMENT_TYPES.reduce((acc, type) => {
-    acc[type] = appointments.filter((a) => a.appointmentType === type).length;
-    return acc;
-  }, {});
+    const byType = APPOINTMENT_TYPES.reduce((acc, type) => {
+      acc[type] = appointments.filter((a) => a.appointment_type === type).length;
+      return acc;
+    }, {});
 
-  const occupiedDays = [
-    ...new Set(
-      appointments
-        .filter((a) => a.status === "scheduled")
-        .map((a) => a.date),
-    ),
-  ].sort();
+    const occupiedDays = [
+      ...new Set(appointments.filter((a) => a.status === "scheduled").map((a) => a.date)),
+    ].sort();
 
-  res.json({
-    totalAppointments: appointments.length,
-    totalUsers: users.length,
-    byStatus,
-    byType,
-    occupiedDays,
-  });
+    res.json({
+      totalAppointments: appointments.length,
+      totalUsers: users.length,
+      byStatus,
+      byType,
+      occupiedDays,
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.get("/", (req, res) => {
-  const appointments = getAppointments();
-  const filtered = filterAppointmentsForUser(appointments, req.user, req.query);
-  res.json(attachPatientEmail(filtered));
+router.get("/", async (req, res, next) => {
+  try {
+    const query = await buildAppointmentQuery(req);
+    if (!query) {
+      return res.status(403).json({ message: "Acesso negado" });
+    }
+
+    if (req.query.date) query.eq("date", req.query.date);
+    if (req.query.appointmentType) query.eq("appointment_type", req.query.appointmentType);
+    if (req.query.status) query.eq("status", req.query.status);
+    if (req.user.role === "admin" && req.query.userId) query.eq("patient_id", req.query.userId);
+    if (req.user.role === "admin" && req.query.doctorId) query.eq("doctor_id", req.query.doctorId);
+
+    const { data, error } = await query;
+    if (error) {
+      throw error;
+    }
+
+    res.json(data.map(mapAppointmentRow));
+  } catch (err) {
+    next(err);
+  }
 });
 
 router.post("/", async (req, res, next) => {
@@ -129,137 +231,173 @@ router.post("/", async (req, res, next) => {
       return res.status(400).json({ message: errors.join(". ") });
     }
 
-    const appointments = getAppointments();
-    if (
-      hasScheduleConflict(appointments, {
-        date: req.body.date,
-        time: req.body.time,
-      })
-    ) {
-      return res
-        .status(409)
-        .json({ message: "Horário já ocupado. Escolha outro horário." });
+    const doctor = await fetchDoctor({ doctorId: req.body.doctorId, doctorName: req.body.doctor });
+    if (!doctor) {
+      return res.status(400).json({ message: "Médico não encontrado. Informe doctorId válido." });
     }
 
-    const appointment = {
-      id: uuidv4(),
-      userId: req.user.id,
-      patientName: String(req.body.patientName).trim(),
-      appointmentType: req.body.appointmentType,
+    if (await hasScheduleConflict({
       date: req.body.date,
       time: req.body.time,
-      doctor: req.body.doctor?.trim() || null,
+      doctorId: doctor.id,
+    })) {
+      return res.status(409).json({ message: "Horário já ocupado. Escolha outro horário." });
+    }
+
+    const appointmentPayload = {
+      id: uuidv4(),
+      patient_id: req.user.id,
+      patient_name: String(req.body.patientName).trim(),
+      appointment_type: req.body.appointmentType,
+      date: req.body.date,
+      time: req.body.time,
+      doctor_id: doctor.id,
+      specialty_id: doctor.specialty_id,
       notes: req.body.notes?.trim() || null,
       status: "scheduled",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
-    appointments.push(appointment);
-    saveAppointments(appointments);
-    res.status(201).json(appointment);
+    const { data, error } = await supabase.from("appointments").insert(appointmentPayload).select(appointmentSelect).single();
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(mapAppointmentRow(data));
   } catch (err) {
     next(err);
   }
 });
 
-router.get("/:id", (req, res) => {
-  const appointments = getAppointments();
-  const appointment = appointments.find((a) => a.id === req.params.id);
-  if (!appointment) {
-    return res.status(404).json({ message: "Consulta não encontrada" });
+router.get("/:id", async (req, res, next) => {
+  try {
+    const appointment = await fetchAppointmentById(req.params.id);
+    if (!appointment) {
+      return res.status(404).json({ message: "Consulta não encontrada" });
+    }
+    if (!canAccessAppointment(req.user, appointment)) {
+      return res.status(403).json({ message: "Acesso negado a esta consulta" });
+    }
+
+    res.json(mapAppointmentRow(appointment));
+  } catch (err) {
+    next(err);
   }
-  if (!canAccessAppointment(req.user, appointment)) {
-    return res.status(403).json({ message: "Acesso negado a esta consulta" });
-  }
-  res.json(appointment);
 });
 
 router.put("/:id", async (req, res, next) => {
   try {
-    const appointments = getAppointments();
-    const idx = appointments.findIndex((a) => a.id === req.params.id);
-    if (idx === -1) {
+    const appointment = await fetchAppointmentById(req.params.id);
+    if (!appointment) {
       return res.status(404).json({ message: "Consulta não encontrada" });
     }
-
-    const current = appointments[idx];
-    if (!canAccessAppointment(req.user, current)) {
+    if (!canAccessAppointment(req.user, appointment)) {
       return res.status(403).json({ message: "Acesso negado a esta consulta" });
     }
 
+    const doctor = await fetchDoctor({ doctorId: req.body.doctorId, doctorName: req.body.doctor });
+    if (req.body.doctorId || req.body.doctor) {
+      if (!doctor) {
+        return res.status(400).json({ message: "Médico não encontrado. Informe doctorId válido." });
+      }
+    }
+
     const merged = {
-      patientName: req.body.patientName ?? current.patientName,
-      appointmentType: req.body.appointmentType ?? current.appointmentType,
-      date: req.body.date ?? current.date,
-      time: req.body.time ?? current.time,
-      doctor: req.body.doctor ?? current.doctor,
-      notes: req.body.notes ?? current.notes,
-      status: req.body.status ?? current.status,
+      patientName: req.body.patientName ?? appointment.patient_name,
+      appointmentType: req.body.appointmentType ?? appointment.appointment_type,
+      date: req.body.date ?? appointment.date,
+      time: req.body.time ?? appointment.time,
+      doctorId: doctor ? doctor.id : appointment.doctor_id,
+      specialtyId: doctor ? doctor.specialty_id : appointment.specialty_id,
+      notes: req.body.notes ?? appointment.notes,
+      status: req.body.status ?? appointment.status,
     };
 
     if (req.user.role !== "admin") {
       if (req.body.status && !["scheduled", "cancelled"].includes(req.body.status)) {
-        return res
-          .status(403)
-          .json({ message: "Apenas administradores podem definir este status" });
+        return res.status(403).json({ message: "Apenas administradores podem definir este status" });
       }
-      if (current.status === "cancelled" && merged.status !== "cancelled") {
-        return res
-          .status(400)
-          .json({ message: "Consultas canceladas não podem ser reativadas" });
+      if (appointment.status === "cancelled" && merged.status !== "cancelled") {
+        return res.status(400).json({ message: "Consultas canceladas não podem ser reativadas" });
       }
     }
 
-    const errors = validateAppointmentPayload(merged, { partial: false });
+    const errors = validateAppointmentPayload(
+      {
+        patientName: merged.patientName,
+        appointmentType: merged.appointmentType,
+        date: merged.date,
+        time: merged.time,
+        status: merged.status,
+      },
+      { partial: false },
+    );
     if (errors.length) {
       return res.status(400).json({ message: errors.join(". ") });
     }
 
     if (
       merged.status === "scheduled" &&
-      hasScheduleConflict(appointments, {
+      (merged.date !== appointment.date || merged.time !== appointment.time || merged.doctorId !== appointment.doctor_id) &&
+      (await hasScheduleConflict({
         date: merged.date,
         time: merged.time,
-        excludeId: current.id,
-      })
+        doctorId: merged.doctorId,
+        excludeId: appointment.id,
+      }))
     ) {
-      return res
-        .status(409)
-        .json({ message: "Horário já ocupado. Escolha outro horário." });
+      return res.status(409).json({ message: "Horário já ocupado. Escolha outro horário." });
     }
 
-    appointments[idx] = {
-      ...current,
-      ...merged,
-      patientName: String(merged.patientName).trim(),
-      doctor: merged.doctor?.trim() || null,
+    const updatePayload = {
+      patient_name: String(merged.patientName).trim(),
+      appointment_type: merged.appointmentType,
+      date: merged.date,
+      time: merged.time,
+      doctor_id: merged.doctorId,
+      specialty_id: merged.specialtyId,
       notes: merged.notes?.trim() || null,
-      updatedAt: new Date().toISOString(),
+      status: merged.status,
+      updated_at: new Date().toISOString(),
     };
 
-    saveAppointments(appointments);
-    res.json(appointments[idx]);
+    const { data, error } = await supabase
+      .from("appointments")
+      .update(updatePayload)
+      .eq("id", appointment.id)
+      .select(appointmentSelect)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.json(mapAppointmentRow(data));
   } catch (err) {
     next(err);
   }
 });
 
-router.delete("/:id", (req, res) => {
-  const appointments = getAppointments();
-  const idx = appointments.findIndex((a) => a.id === req.params.id);
-  if (idx === -1) {
-    return res.status(404).json({ message: "Consulta não encontrada" });
-  }
+router.delete("/:id", async (req, res, next) => {
+  try {
+    const appointment = await fetchAppointmentById(req.params.id);
+    if (!appointment) {
+      return res.status(404).json({ message: "Consulta não encontrada" });
+    }
+    if (!canAccessAppointment(req.user, appointment)) {
+      return res.status(403).json({ message: "Acesso negado a esta consulta" });
+    }
 
-  const current = appointments[idx];
-  if (!canAccessAppointment(req.user, current)) {
-    return res.status(403).json({ message: "Acesso negado a esta consulta" });
-  }
+    const { error } = await supabase.from("appointments").delete().eq("id", appointment.id);
+    if (error) {
+      throw error;
+    }
 
-  const removed = appointments.splice(idx, 1)[0];
-  saveAppointments(appointments);
-  res.json({ message: "Consulta removida", appointment: removed });
+    res.json({ message: "Consulta removida", appointment: mapAppointmentRow(appointment) });
+  } catch (err) {
+    next(err);
+  }
 });
 
 module.exports = router;

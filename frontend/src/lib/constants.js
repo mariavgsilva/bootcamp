@@ -1,7 +1,7 @@
 export const APPOINTMENT_TYPES = [
   "Cardiologista",
   "Hemograma",
-  "Checkup Geral",
+  "Checkup",
   "Ressonancia Magnética",
   "Ortopedista",
   "Dermatologista",
