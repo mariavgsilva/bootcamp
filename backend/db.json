@@ -4,10 +4,162 @@
       "id": "admin-1777665350515",
       "name": "Administrator",
       "email": "admin@example.com",
-      "password": "$2b$10$fwl1aX/qbph9B0dj3W3eOOug7smG2aJIC7bEI2pyz7EassoEjW3tC",
+      "password": "$2b$10$IGCSsXuwRV6sqMnth4Uweeda5LSfctkoU20bDvcvH6RGHCeQW1BPm",
       "age": null,
       "role": "admin",
       "createdAt": "2026-05-01T19:55:50.515Z"
+    },
+    {
+      "id": "d523248f-0e55-40a0-bcc3-5d172d77b4e0",
+      "name": "Test User",
+      "email": "teste2@vitta.com",
+      "password": "$2b$10$Ric.RrdY4tRtga5BiF3yvuvb1WTTBLrRqgn9CvuvjLDCUi.dk.O1q",
+      "age": null,
+      "role": "user",
+      "createdAt": "2026-05-15T16:24:33.574Z"
+    },
+    {
+      "id": "5326aef9-1fc2-43b3-856e-ba1684667307",
+      "name": "Maria",
+      "email": "mariavitoria32024@gmail.com",
+      "password": "$2b$10$lkgGcWvwXDLJ8pPPi5wc0ejLCO/9lIdaePzuZ95ps.9heiC3BVpnu",
+      "age": null,
+      "role": "user",
+      "createdAt": "2026-05-15T18:30:14.096Z"
+    },
+    {
+      "id": "c07cfc5c-49ba-4e6c-aac7-a587194efc2b",
+      "name": "icaroh rodrigo da silva araujo",
+      "email": "icarohrsaraujo@gmail.com",
+      "password": "$2b$10$wKDzpEC..BY9NKtk39WK7esJvEUM8iZ85bWGeL/eMqB6vxliv/UJ2",
+      "age": 17,
+      "role": "user",
+      "createdAt": "2026-05-16T11:45:41.454Z"
+    },
+    {
+      "id": "81bc5290-5bd1-464d-b1d3-8967e1cf8827",
+      "name": "ass",
+      "email": "ass@gmail.com",
+      "password": "$2b$10$assOMf.AIFkrkAnPBgvVmOYcX4nyiUTKQ/QOlvBsMnef.nYx73Y4y",
+      "age": null,
+      "role": "user",
+      "createdAt": "2026-05-16T12:34:28.823Z"
+    },
+    {
+      "id": "d9cd24aa-d5dc-43f6-9b53-900333905fc8",
+      "name": "MOISES GUILHERME DA SILVA",
+      "email": "moises@gmail.com",
+      "password": "$2b$10$DvgBJx7kGOsjWifxrPigquucYRzLsEk.kQPqSqH5CsamszVOpyBUq",
+      "age": null,
+      "role": "user",
+      "createdAt": "2026-05-16T12:35:20.467Z"
+    },
+    {
+      "id": "87fac9c9-4ce7-472d-9a5e-779b0c1e3faa",
+      "name": "qw",
+      "email": "copo@gmail.com",
+      "password": "$2b$10$656CjuFy8FeT0Zac2CHoTeOYHwjskgNZQDQyyH2EDAjOm5J0vURee",
+      "age": null,
+      "role": "user",
+      "createdAt": "2026-05-16T12:37:44.333Z"
+    },
+    {
+      "id": "b285d766-0c0f-4969-b261-02e7cad87c66",
+      "name": "we",
+      "email": "poco@gmail.com",
+      "password": "$2b$10$1vUZKS/AuHVunxwlFzvgFefXkVrjZeYopNz2t.7sc5bJvxNiDXSD.",
+      "age": null,
+      "role": "user",
+      "createdAt": "2026-05-16T12:38:26.474Z"
+    },
+    {
+      "id": "7ce2d7e5-b894-4afc-b31b-4448c7884aba",
+      "name": "Emanoel Gomes",
+      "email": "emanoel@vitta.com",
+      "password": "$2b$10$C2spU3BcuKk/wDtMYFisZeR.U4rXQUcDsC1ZTm2ZJEQGKbacHKG16",
+      "age": null,
+      "role": "user",
+      "createdAt": "2026-05-16T12:50:40.355Z"
+    }
+  ],
+  "appointments": [
+    {
+      "id": "6f7dc1c6-c865-4430-a222-c7ec39dcbfa9",
+      "userId": "d523248f-0e55-40a0-bcc3-5d172d77b4e0",
+      "patientName": "Maria Silva",
+      "appointmentType": "Cardiologista",
+      "date": "2026-05-25",
+      "time": "10:00",
+      "doctor": null,
+      "notes": null,
+      "status": "scheduled",
+      "createdAt": "2026-05-16T08:44:44.116Z",
+      "updatedAt": "2026-05-16T08:44:44.116Z"
+    },
+    {
+      "id": "9573be5f-b6fe-4b2c-8bb1-e8df777bd34b",
+      "userId": "5326aef9-1fc2-43b3-856e-ba1684667307",
+      "patientName": "Maria",
+      "appointmentType": "Checkup Geral",
+      "date": "2026-12-06",
+      "time": "08:00",
+      "doctor": null,
+      "notes": null,
+      "status": "scheduled",
+      "createdAt": "2026-05-16T08:51:42.127Z",
+      "updatedAt": "2026-05-16T08:51:42.127Z"
+    },
+    {
+      "id": "296dc0b3-98bf-41ee-954c-39a40a96c346",
+      "userId": "c07cfc5c-49ba-4e6c-aac7-a587194efc2b",
+      "patientName": "icaroh rodrigo da silva araujo",
+      "appointmentType": "Pediatra",
+      "date": "2026-09-11",
+      "time": "10:00",
+      "doctor": null,
+      "notes": null,
+      "status": "scheduled",
+      "createdAt": "2026-05-16T11:48:36.270Z",
+      "updatedAt": "2026-05-16T11:48:36.270Z"
+    },
+    {
+      "id": "aa962908-c107-413e-9023-391601bc816c",
+      "userId": "5326aef9-1fc2-43b3-856e-ba1684667307",
+      "patientName": "Maria",
+      "appointmentType": "Hemograma",
+      "date": "2026-05-16",
+      "time": "14:30",
+      "doctor": null,
+      "notes": null,
+      "status": "scheduled",
+      "createdAt": "2026-05-16T11:59:30.645Z",
+      "updatedAt": "2026-05-16T11:59:30.645Z"
+    },
+    {
+      "id": "0531a29e-f59c-409e-8a03-902e2de3a64a",
+      "userId": "d9cd24aa-d5dc-43f6-9b53-900333905fc8",
+      "patientName": "MOISES GUILHERME DA SILVA",
+      "appointmentType": "Pediatra",
+      "date": "2026-05-16",
+      "time": "10:00",
+      "doctor": null,
+      "notes": null,
+      "status": "scheduled",
+      "createdAt": "2026-05-16T12:37:12.384Z",
+      "updatedAt": "2026-05-16T12:37:12.384Z"
+    },
+    {
+      "id": "c55311e9-8b8e-4668-9686-e20a2bd132cb",
+      "userId": "7ce2d7e5-b894-4afc-b31b-4448c7884aba",
+      "patientName": "Emanoel Gomes",
+      "appointmentType": "Cardiologista",
+      "date": "2026-05-16",
+      "time": "12:00",
+      "doctor": null,
+      "notes": "queria agendar essa consulta por que meu coração doi",
+      "status": "scheduled",
+      "createdAt": "2026-05-16T12:55:55.872Z",
+      "updatedAt": "2026-05-16T12:57:34.092Z"
     }
   ]
 }

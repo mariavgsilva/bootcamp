@@ -5,9 +5,9 @@ function readDB() {
   try {
     const content = fs.readFileSync(dbPath, "utf8");
     return JSON.parse(content);
-  } catch (err) {
-    return { users: [] };
-  };
+  } catch {
+    return { users: [], appointments: [] };
+  }
 }
 function writeDB(data) {
   fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
@@ -21,4 +21,23 @@ function saveUsers(users) {
   db.users = users;
   writeDB(db);
 }
-module.exports = { readDB, writeDB, getUsers, saveUsers };
+
+function getAppointments() {
+  const db = readDB();
+  return db.appointments || [];
+}
+
+function saveAppointments(appointments) {
+  const db = readDB();
+  db.appointments = appointments;
+  writeDB(db);
+}
+
+module.exports = {
+  readDB,
+  writeDB,
+  getUsers,
+  saveUsers,
+  getAppointments,
+  saveAppointments,
+};
