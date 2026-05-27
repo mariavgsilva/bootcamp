@@ -2,8 +2,8 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
-const { getUsers, saveUsers } = require("../db");
-const { jwtSecret, jwtExpiresIn } = require("../config");
+// Importamos o supabase do config.js e removemos o db.js
+const { jwtSecret, jwtExpiresIn, supabase } = require("../config");
 const { isValidEmail, isValidPassword } = require("../utils/validate");
 
 const router = express.Router();
@@ -13,9 +13,7 @@ router.post("/register", async (req, res, next) => {
     const { name, email, password, age } = req.body;
 
     if (!name || !email || !password) {
-      return res
-        .status(400)
-        .json({ message: "name, email e password são obrigatórios" });
+      return res.status(400).json({ message: "name, email e password são obrigatórios" });
     }
 
     if (!isValidEmail(email)) {
@@ -23,19 +21,21 @@ router.post("/register", async (req, res, next) => {
     }
 
     if (!isValidPassword(password)) {
-      return res
-        .status(400)
-        .json({ message: "A senha deve ter no mínimo 6 caracteres" });
+      return res.status(400).json({ message: "A senha deve ter no mínimo 6 caracteres" });
     }
 
-    const users = getUsers();
-    const exists = users.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase(),
-    );
-    if (exists) {
+    // 1. Verifica no Supabase se o email já existe
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", email.toLowerCase())
+      .maybeSingle();
+
+    if (existingUser) {
       return res.status(409).json({ message: "Email já cadastrado" });
     }
 
+    // 2. Cria e salva o usuário no Supabase
     const hashed = await bcrypt.hash(password, 10);
     const newUser = {
       id: uuidv4(),
@@ -44,11 +44,11 @@ router.post("/register", async (req, res, next) => {
       password: hashed,
       age: age ?? null,
       role: "user",
-      createdAt: new Date().toISOString(),
+      // O createdAt agora é gerado automaticamente pelo banco de dados!
     };
 
-    users.push(newUser);
-    saveUsers(users);
+    const { error: insertError } = await supabase.from("users").insert([newUser]);
+    if (insertError) throw insertError;
 
     const { password: _, ...userNoPass } = newUser;
     res.status(201).json(userNoPass);
@@ -63,14 +63,19 @@ router.post("/login", async (req, res, next) => {
     const debugAuth = process.env.AUTH_DEBUG === "true";
 
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "email e password são obrigatórios" });
+      return res.status(400).json({ message: "email e password são obrigatórios" });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    const users = getUsers();
-    const user = users.find((u) => u.email.toLowerCase() === normalizedEmail);
+
+    // 1. Busca o usuário no Supabase
+    const { data: user, error: fetchError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", normalizedEmail)
+      .maybeSingle();
+
+    if (fetchError) throw fetchError;
 
     if (debugAuth) {
       console.log("[auth/login] email:", normalizedEmail, "userFound:", Boolean(user));
@@ -85,6 +90,7 @@ router.post("/login", async (req, res, next) => {
       return res.status(500).json({ message: "Conta com dados inválidos. Contate o suporte." });
     }
 
+    // 2. Compara a senha
     const match = await bcrypt.compare(password, user.password);
     if (debugAuth) {
       console.log("[auth/login] bcrypt.compare:", match, "role:", user.role);
@@ -94,6 +100,7 @@ router.post("/login", async (req, res, next) => {
       return res.status(401).json({ message: "Credenciais inválidas" });
     }
 
+    // 3. Gera o token
     const token = jwt.sign({ id: user.id, role: user.role }, jwtSecret, {
       expiresIn: jwtExpiresIn,
     });
