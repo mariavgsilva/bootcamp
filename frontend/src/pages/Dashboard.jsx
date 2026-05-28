@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AppointmentCard from "../components/AppointmentCard";
 import FormError from "../components/FormError";
-import PageLayout from "../components/PageLayout";
+import AppLayout from "../components/AppLayout";
 import { useAuth } from "../hooks/useAuth";
 import { ApiError, fetchProfile } from "../lib/api";
 import { fetchAppointments } from "../lib/appointmentApi";
@@ -43,7 +43,7 @@ function Dashboard() {
   }, []);
 
   return (
-    <PageLayout
+    <AppLayout
       wide
       title="Painel da Clinica"
       subtitle={`Bem-vindo(a), ${profile?.name || "usuario"}`}
@@ -67,21 +67,7 @@ function Dashboard() {
           </p>
         )}
       </section>
-
-      <div className="dashboard-actions">
-        <Link to="/agendamento" className="btn btn-primary btn-link">
-          Agendar consulta
-        </Link>
-        <Link to="/agendamento" className="btn btn-secondary btn-link">
-          Ver todas as consultas
-        </Link>
-        {isAdmin ? (
-          <Link to="/admin" className="btn btn-secondary btn-link">
-            Painel admin
-          </Link>
-        ) : null}
-      </div>
-    </PageLayout>
+    </AppLayout>
   );
 }
 

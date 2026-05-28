@@ -3,8 +3,8 @@
 }
 
 :root {
-  --clinic-primary: #2b8cbe;
-  --clinic-primary-dark: #1f6f9a;
+  --clinic-primary: #33a4dc;
+  --clinic-primary-dark: #2687bb;
   --clinic-primary-soft: #e8f4fa;
   --clinic-accent: #3aaf9a;
   --clinic-surface: #ffffff;
@@ -246,7 +246,7 @@ a {
 
 .btn-small {
   padding: 6px 10px;
-  font-size: 0.85rem;
+  font-size: 1rem;
 }
 
 .admin-layout {
@@ -304,8 +304,24 @@ a {
   margin-top: 8px;
 }
 
+.botaosair {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 9999;
+
+  background: #5aa7c3;
+  color: white;
+
+  border: none;
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
 .booking-section-header {
   margin-bottom: 20px;
+
 }
 
 .booking-section-header h2 {
@@ -640,12 +656,19 @@ h1 {
 }
 
 .btn-secondary {
-  background: #e0e0e0;
-  color: #333;
+  background: #5aa7c3;
+  text-align: center;
+  color: #ffffff;
+}
+
+.btn-small {
+  padding: 12px 10px;
+  
+  font-size: 1rem;
 }
 
 .btn-danger {
-  background: #eb5757;
+  background: #5aa7c3;
   color: #fff;
 }
 
@@ -713,4 +736,138 @@ h1 {
     grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
     max-height: 280px;
   }
+}
+
+
+/* ===== NOVO APP LAYOUT ===== */
+
+.app-shell {
+  min-height: 100vh;
+  background: #f4f7fb;
+}
+
+.app-header {
+  height: 72px;
+  background: #c7c6de;
+  border-bottom: 1px solid #c7c6de;
+  display: flex;
+  align-items: column;
+  justify-content: space-between;
+  padding: 12px 20px;
+}
+
+.app-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #2563eb;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.brand-name {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.brand-tagline {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.app-body {
+  display: flex;
+}
+
+.app-sidebar {
+  width: 250px;
+  min-height: calc(100vh - 72px);
+  background: #d4d4d5;
+  border-right: 1px solid #e5e7eb;
+  padding: 20px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #374151;
+  transition: 0.2s;
+}
+
+.sidebar-nav-item:hover {
+  background: #eff6ff;
+}
+
+.sidebar-nav-item--active {
+  background: #35a5ea;
+  color: rgb(0, 0, 0);
+}
+
+.sidebar-nav-item--admin {
+  color: #000000;
+}
+
+.sidebar-nav-item--active-admin {
+  background: #26b67f;
+  color: rgb(0, 0, 0);
+}
+
+.app-main {
+  flex: 1;
+  padding: 24px;
+}
+
+.app-content {
+  width: 100%;
+}
+
+.app-page-header {
+  margin-bottom: 24px;
+}
+
+.app-page-title {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+
+.app-page-subtitle {
+  color: #6b7280;
+}
+
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: #2563eb;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
 }

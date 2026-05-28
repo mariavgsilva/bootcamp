@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminSidebar from "../components/AdminSidebar";
 import AppointmentTable from "../components/AppointmentTable";
 import FormError from "../components/FormError";
-import PageLayout from "../components/PageLayout";
+import AppLayout from "../components/AppLayout";
 import ScheduleGrid from "../components/ScheduleGrid";
 import SelectField from "../components/SelectField";
 import { ApiError } from "../lib/api";
@@ -134,7 +134,7 @@ function AdminDashboard() {
   }));
 
   return (
-    <PageLayout
+    <AppLayout
       wide
       title="Painel administrativo"
       subtitle="Gerencie usuarios, consultas e ocupacao da clinica"
@@ -261,7 +261,7 @@ function AdminDashboard() {
           </section>
         </div>
       </div>
-    </PageLayout>
+    </AppLayout>
   );
 }
 

@@ -80,6 +80,15 @@
       "age": null,
       "role": "user",
       "createdAt": "2026-05-16T12:50:40.355Z"
+    },
+    {
+      "id": "47475514-09a0-45fe-8332-2ef6ddc077c5",
+      "name": "taizher",
+      "email": "rapazes@gmail.com",
+      "password": "$2b$10$wbXRf9/BYSZXr9/rLZazw.VdUexsUvaJ5iRMuCceoIJYOMARp8C3e",
+      "age": 18,
+      "role": "user",
+      "createdAt": "2026-05-28T00:05:00.897Z"
     }
   ],
   "appointments": [
@@ -160,6 +169,58 @@
       "status": "scheduled",
       "createdAt": "2026-05-16T12:55:55.872Z",
       "updatedAt": "2026-05-16T12:57:34.092Z"
+    },
+    {
+      "id": "71925eb7-2603-42e4-ab9d-c797cb897232",
+      "userId": "47475514-09a0-45fe-8332-2ef6ddc077c5",
+      "patientName": "taizher",
+      "appointmentType": "Cardiologista",
+      "date": "2026-05-28",
+      "time": "08:00",
+      "doctor": null,
+      "notes": null,
+      "status": "scheduled",
+      "createdAt": "2026-05-28T03:43:34.810Z",
+      "updatedAt": "2026-05-28T03:43:34.810Z"
+    },
+    {
+      "id": "f3c8794f-680f-4a9d-8697-c72d5d13e2af",
+      "userId": "47475514-09a0-45fe-8332-2ef6ddc077c5",
+      "patientName": "taizher",
+      "appointmentType": "Hemograma",
+      "date": "2026-05-28",
+      "time": "10:00",
+      "doctor": null,
+      "notes": null,
+      "status": "scheduled",
+      "createdAt": "2026-05-28T03:43:38.100Z",
+      "updatedAt": "2026-05-28T03:43:38.100Z"
+    },
+    {
+      "id": "ea2eb8bc-a0d8-42ea-8957-3f31bdb7de24",
+      "userId": "47475514-09a0-45fe-8332-2ef6ddc077c5",
+      "patientName": "taizher",
+      "appointmentType": "Hemograma",
+      "date": "2026-05-28",
+      "time": "12:00",
+      "doctor": null,
+      "notes": null,
+      "status": "scheduled",
+      "createdAt": "2026-05-28T03:43:40.616Z",
+      "updatedAt": "2026-05-28T03:43:40.616Z"
+    },
+    {
+      "id": "60812826-abf0-4090-981a-acef263f4600",
+      "userId": "47475514-09a0-45fe-8332-2ef6ddc077c5",
+      "patientName": "taizher",
+      "appointmentType": "Cardiologista",
+      "date": "2026-05-28",
+      "time": "10:30",
+      "doctor": null,
+      "notes": null,
+      "status": "scheduled",
+      "createdAt": "2026-05-28T03:43:44.348Z",
+      "updatedAt": "2026-05-28T03:43:44.348Z"
     }
   ]
 }

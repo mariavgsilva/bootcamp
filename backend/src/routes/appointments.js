@@ -1,6 +1,7 @@
 const express = require("express");
 const { v4: uuidv4 } = require("uuid");
 const { getAppointments, saveAppointments, getUsers } = require("../db");
+const { listAppointments, createAppointment } = require("../services/appointmentService");
 const { APPOINTMENT_TYPES, APPOINTMENT_STATUSES } = require("../constants/appointments");
 const {
   validateAppointmentPayload,
@@ -42,8 +43,8 @@ function canAccessAppointment(user, appointment) {
   return user.role === "admin" || appointment.userId === user.id;
 }
 
-function attachPatientEmail(appointments) {
-  const users = getUsers();
+async function attachPatientEmail(appointments) {
+  const users = await getUsers();
   return appointments.map((appointment) => {
     const owner = users.find((u) => u.id === appointment.userId);
     return {
@@ -57,13 +58,13 @@ router.get("/meta/types", (req, res) => {
   res.json({ types: APPOINTMENT_TYPES, statuses: APPOINTMENT_STATUSES });
 });
 
-router.get("/schedule", (req, res) => {
+router.get("/schedule", async (req, res) => {
   const { date } = req.query;
   if (!date || !isValidDateString(date)) {
     return res.status(400).json({ message: "Informe date no formato YYYY-MM-DD" });
   }
 
-  const appointments = getAppointments();
+  const appointments = await getAppointments();
   let slots = buildDaySchedule(appointments, date);
 
   if (req.user.role !== "admin") {
@@ -85,9 +86,9 @@ router.get("/schedule", (req, res) => {
   res.json({ date, slots });
 });
 
-router.get("/stats", requireAdmin, (req, res) => {
-  const appointments = getAppointments();
-  const users = getUsers();
+router.get("/stats", requireAdmin, async (req, res) => {
+  const appointments = await getAppointments();
+  const users = await getUsers();
 
   const byStatus = APPOINTMENT_STATUSES.reduce((acc, status) => {
     acc[status] = appointments.filter((a) => a.status === status).length;
@@ -116,55 +117,26 @@ router.get("/stats", requireAdmin, (req, res) => {
   });
 });
 
-router.get("/", (req, res) => {
-  const appointments = getAppointments();
-  const filtered = filterAppointmentsForUser(appointments, req.user, req.query);
-  res.json(attachPatientEmail(filtered));
-});
-
-router.post("/", async (req, res, next) => {
+router.get("/", async (req, res, next) => {
   try {
-    const errors = validateAppointmentPayload(req.body);
-    if (errors.length) {
-      return res.status(400).json({ message: errors.join(". ") });
-    }
-
-    const appointments = getAppointments();
-    if (
-      hasScheduleConflict(appointments, {
-        date: req.body.date,
-        time: req.body.time,
-      })
-    ) {
-      return res
-        .status(409)
-        .json({ message: "Horário já ocupado. Escolha outro horário." });
-    }
-
-    const appointment = {
-      id: uuidv4(),
-      userId: req.user.id,
-      patientName: String(req.body.patientName).trim(),
-      appointmentType: req.body.appointmentType,
-      date: req.body.date,
-      time: req.body.time,
-      doctor: req.body.doctor?.trim() || null,
-      notes: req.body.notes?.trim() || null,
-      status: "scheduled",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    appointments.push(appointment);
-    saveAppointments(appointments);
-    res.status(201).json(appointment);
+    const appointments = await listAppointments(req.user, req.query);
+    res.json(appointments);
   } catch (err) {
     next(err);
   }
 });
 
-router.get("/:id", (req, res) => {
-  const appointments = getAppointments();
+router.post("/", async (req, res, next) => {
+  try {
+    const result = await createAppointment(req.body, req.user);
+    res.status(result.status).json(result.body);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/:id", async (req, res) => {
+  const appointments = await getAppointments();
   const appointment = appointments.find((a) => a.id === req.params.id);
   if (!appointment) {
     return res.status(404).json({ message: "Consulta não encontrada" });
@@ -177,7 +149,7 @@ router.get("/:id", (req, res) => {
 
 router.put("/:id", async (req, res, next) => {
   try {
-    const appointments = getAppointments();
+    const appointments = await getAppointments();
     const idx = appointments.findIndex((a) => a.id === req.params.id);
     if (idx === -1) {
       return res.status(404).json({ message: "Consulta não encontrada" });
@@ -238,15 +210,15 @@ router.put("/:id", async (req, res, next) => {
       updatedAt: new Date().toISOString(),
     };
 
-    saveAppointments(appointments);
+    await saveAppointments(appointments);
     res.json(appointments[idx]);
   } catch (err) {
     next(err);
   }
 });
 
-router.delete("/:id", (req, res) => {
-  const appointments = getAppointments();
+router.delete("/:id", async (req, res) => {
+  const appointments = await getAppointments();
   const idx = appointments.findIndex((a) => a.id === req.params.id);
   if (idx === -1) {
     return res.status(404).json({ message: "Consulta não encontrada" });
@@ -258,7 +230,7 @@ router.delete("/:id", (req, res) => {
   }
 
   const removed = appointments.splice(idx, 1)[0];
-  saveAppointments(appointments);
+  await saveAppointments(appointments);
   res.json({ message: "Consulta removida", appointment: removed });
 });
 

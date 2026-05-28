@@ -28,9 +28,6 @@ function PageLayout({ title, subtitle, children, wide = false }) {
                 Admin
               </Link>
             ) : null}
-            <Button type="button" variant="danger" onClick={logout}>
-              Sair
-            </Button>
           </nav>
         </header>
         {children}

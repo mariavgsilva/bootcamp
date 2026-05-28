@@ -1,36 +1,41 @@
-const fs = require("fs");
-const path = require("path");
-const dbPath = path.join(__dirname, "..", "db.json");
-function readDB() {
+const fs = require('fs').promises;
+const path = require('path');
+
+const dbPath = path.join(__dirname, '..', 'db.json');
+
+async function readDB() {
   try {
-    const content = fs.readFileSync(dbPath, "utf8");
+    const content = await fs.readFile(dbPath, 'utf8');
     return JSON.parse(content);
   } catch {
     return { users: [], appointments: [] };
   }
 }
-function writeDB(data) {
-  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
-}
-function getUsers() {
-  const db = readDB();
-  return db.users || [];
-}
-function saveUsers(users) {
-  const db = readDB();
-  db.users = users;
-  writeDB(db);
+
+async function writeDB(data) {
+  await fs.writeFile(dbPath, JSON.stringify(data, null, 2));
 }
 
-function getAppointments() {
-  const db = readDB();
+async function getUsers() {
+  const db = await readDB();
+  return db.users || [];
+}
+
+async function saveUsers(users) {
+  const db = await readDB();
+  db.users = users;
+  await writeDB(db);
+}
+
+async function getAppointments() {
+  const db = await readDB();
   return db.appointments || [];
 }
 
-function saveAppointments(appointments) {
-  const db = readDB();
+async function saveAppointments(appointments) {
+  const db = await readDB();
   db.appointments = appointments;
-  writeDB(db);
+  await writeDB(db);
 }
 
 module.exports = {

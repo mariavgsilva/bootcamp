@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import AppointmentCard from "../components/AppointmentCard";
 import BookingSection from "../components/BookingSection";
 import FormError from "../components/FormError";
-import PageLayout from "../components/PageLayout";
+import AppLayout from "../components/AppLayout";
 import { ApiError } from "../lib/api";
 import {
   createAppointment,
@@ -112,7 +112,7 @@ function Agendamento() {
   const history = appointments.filter((a) => a.status !== "scheduled");
 
   return (
-    <PageLayout
+    <AppLayout
       wide
       title="Agendamentos"
       subtitle="Agende consultas e acompanhe sua agenda na clínica"
@@ -171,7 +171,7 @@ function Agendamento() {
           </div>
         </section>
       ) : null}
-    </PageLayout>
+    </AppLayout>
   );
 }
 
