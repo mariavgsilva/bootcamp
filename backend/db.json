@@ -89,6 +89,24 @@
       "age": 18,
       "role": "user",
       "createdAt": "2026-05-28T00:05:00.897Z"
+    },
+    {
+      "id": "94d72259-be2f-4db3-80af-9983cc0abe8e",
+      "name": "jr",
+      "email": "jrjr@gmail.com",
+      "password": "$2b$10$mf8K8QqxQYqwOUX4KmJiFef.8hL7FXfMrPQA0nsufM1wvwmMCRUqy",
+      "age": 56,
+      "role": "user",
+      "createdAt": "2026-05-28T06:03:44.564Z"
+    },
+    {
+      "id": "8d965b78-ee34-4db4-ae66-b405c0fb60fd",
+      "name": "marilia",
+      "email": "marilia@gmail.com",
+      "password": "$2b$10$t9xkplxaGPDx11MupjTKZOQjRsiARNXI73xX4ObTMc1YrVBNd2VgK",
+      "age": null,
+      "role": "user",
+      "createdAt": "2026-05-28T06:35:09.487Z"
     }
   ],
   "appointments": [
@@ -221,6 +239,32 @@
       "status": "scheduled",
       "createdAt": "2026-05-28T03:43:44.348Z",
       "updatedAt": "2026-05-28T03:43:44.348Z"
+    },
+    {
+      "id": "3099a5ea-5d91-4458-9ef3-cbc05a23adac",
+      "userId": "94d72259-be2f-4db3-80af-9983cc0abe8e",
+      "patientName": "jr",
+      "appointmentType": "Cardiologista",
+      "date": "2026-05-28",
+      "time": "08:30",
+      "doctor": null,
+      "notes": null,
+      "status": "scheduled",
+      "createdAt": "2026-05-28T06:14:11.149Z",
+      "updatedAt": "2026-05-28T06:14:11.149Z"
+    },
+    {
+      "id": "afa16731-69cf-4bcd-9d9e-df0597ded0d5",
+      "userId": "94d72259-be2f-4db3-80af-9983cc0abe8e",
+      "patientName": "jr",
+      "appointmentType": "Ressonancia Magnética",
+      "date": "2026-05-28",
+      "time": "09:00",
+      "doctor": null,
+      "notes": null,
+      "status": "scheduled",
+      "createdAt": "2026-05-28T06:14:16.125Z",
+      "updatedAt": "2026-05-28T06:14:16.125Z"
     }
   ]
 }
